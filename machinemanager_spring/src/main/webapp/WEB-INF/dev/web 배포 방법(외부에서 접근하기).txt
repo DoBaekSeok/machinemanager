@@ -1,0 +1,9 @@
+배포 방법
+
+1. web 프로젝트의 .metadata 의 server core 내의 tmp0/wtpwebapps 안에 있는 배포하고자 하는 프로젝트를 톰켓이 설치된 폴더의 webapps 폴더에 복사한다.
+(webapps 폴더에 들어있는 프로젝트는 외부에서 접근할 수 있다.)
+
+2. 톰켓의 bin 폴더에서 startup.bat 를 통해 서버를 열어둔다.
+
+3. 외부 ip에서 http://(ip주소):(포트번호)/(프로젝트폴더이름) 으로 접속한다.
+	ex)    http://192.168.13.17:8081/projectweb

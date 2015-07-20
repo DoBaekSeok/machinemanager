@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace : 패키지명.클래스이름 을 논리적으로 선언 -->
+<mapper namespace="com.machinemanager.model.mapper.SupplyMapper">
+	
+	<insert id="insertSupply" useGeneratedKeys="true" keyColumn="supplyno" keyProperty="supplyNo" parameterType="Supply">
+		INSERT INTO 
+		supply
+		(
+			supplyno, 
+			supplyname, 
+			supplyaddress, 
+			supplyemail, 
+			supplyphone, 
+			supplier, 
+			supplierphone, 
+			supplynote
+		)
+		VALUES 
+		(
+			supply_seq.nextval,  
+			#{ supplyName }, 
+			#{ supplyAddress }, 
+			#{ supplyEmail }, 
+			#{ supplyPhone }, 
+			#{ supplier }, 
+			#{ supplierPhone },
+			#{ supplyNote }
+		)
+	</insert>
+	
+	<select id="getSupplyList" parameterType="Supply" resultType="Supply">
+		SELECT
+			supplyno, 
+			supplyname, 
+			supplyaddress, 
+			supplyemail,
+			supplyphone, 
+			supplier, 
+			supplierphone, 
+			supplydeleted
+		FROM
+			supply
+	</select>
+	
+	<sql id="supplycolumn">
+		supplyno, supplyname, supplyaddress, supplyemail, supplyphone, supplier, supplierphone, supplynote, supplydeleted
+	</sql>
+	
+	<select id="getSupplyListByPage" parameterType="hashMap" resultType="Supply">
+		SELECT 
+			<include refid="supplycolumn" />
+		FROM  
+		(
+			SELECT
+				rownum idx, 
+				s.*
+			FROM   
+			(
+			   	SELECT
+			    	<include refid="supplycolumn" />
+			   	FROM 
+			       	supply 
+			) s
+		)
+	 	WHERE 
+			idx &gt;= #{ first } AND idx &lt; #{ last }
+	</select>
+	
+	<select id="getSupplyListBySearchPage" parameterType="hashMap" resultType="Supply">
+		SELECT 
+			<include refid="supplycolumn" />
+		FROM  
+		(
+			SELECT
+				rownum idx, 
+				s.*
+			FROM   
+			(
+			   	SELECT
+			    	<include refid="supplycolumn" />
+			   	FROM 
+			       	supply
+			  	WHERE
+			  		<choose>
+			  			<when test="searchtype == 'supplyname'">
+			  				supplyname LIKE '%${ searchvalue }%'
+			  			</when>
+			  			<when test="searchtype == 'supplier'">
+			  				supplier LIKE '%${ searchvalue }%'
+			  			</when>	  		
+			  		</choose> 		
+			) s
+			
+			
+		)
+	 	WHERE 
+			idx &gt;= #{ first } AND idx &lt; #{ last }
+	</select>
+	 
+	<select id="getSupplyCount" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			supply
+	</select>
+	
+	<select id="getSupplySearchCount" parameterType="hashMap" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+		(
+			SELECT
+			    supplyno
+			FROM 
+				supply
+			WHERE
+				<choose>
+			  		<when test="searchtype == 'supplyname'">
+			  			supplyname LIKE '%${ searchvalue }%'
+			  		</when>
+			  		<when test="searchtype == 'supplier'">
+			  			supplier LIKE '%${ searchvalue }%'
+			  		</when>	  		
+			  	</choose>
+		)
+	</select>
+	
+	<select id="getSupplyBySupplyNo" parameterType="int" resultType="Supply">
+		SELECT
+			supplyno, 
+			supplyname, 
+			supplyaddress, 
+			supplyemail, 
+			supplyphone, 
+			supplier, 
+			supplierphone, 
+			supplynote
+		FROM 
+			supply 
+		WHERE 
+			supplyno= #{ supplyNo }
+	</select>
+
+	<update id="updateSupply" parameterType="Supply">
+		UPDATE
+			supply 
+		SET 
+			supplyname=#{ supplyName }, 
+			supplyaddress=#{ supplyAddress }, 
+			supplyemail=#{ supplyEmail }, 
+			supplyphone=#{ supplyPhone }, 
+			supplier=#{ supplier }, 
+			supplierphone=#{ supplierPhone }, 
+			supplynote=#{ supplyNote }
+		WHERE 
+			supplyno=#{ supplyNo }
+	</update>
+	
+	<delete id="deleteSupply" parameterType="int">
+		UPDATE 
+			supply 
+		SET 
+			supplydeleted = '1' 
+		WHERE 
+			supplyno=#{ supplyNo } 
+	</delete>
+</mapper>

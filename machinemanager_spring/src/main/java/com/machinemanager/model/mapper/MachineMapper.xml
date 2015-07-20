@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<!-- namespace : 패키지명.클래스이름 을 논리적으로 선언 -->
+<mapper namespace="com.machinemanager.model.mapper.MachineMapper">
+		
+	<sql id="machineJoinColumns">
+		m.machineno, m.machineModelName, m.machinetype, m.machineweight, m.machinewidth, m.machinedepth,
+		m.machineheight, m.machinepowerconsumption, m.machinecompany, su.setupstatus
+	</sql>
+	
+	<sql id="machineJoinPageColumns">
+		machineno, machineModelName, machinetype, machineweight, machinewidth, machinedepth,
+		machineheight, machinepowerconsumption, machinecompany, setupstatus
+	</sql>
+	
+	<resultMap id="machineListResult" type="Machine" >
+		<id column="m.machineno" property="machineNo" />
+		<result column="m.machineModelName" property="machineModelName" />
+		<result column="m.machinetype" property="machineType" />
+		<result column="m.machineweight" property="machineWeight" />
+		<result column="m.machinewidth" property="machineWidth" />
+		<result column="m.machinedepth" property="machineDepth" />
+		<result column="m.machineheight" property="machineHeight" />
+		<result column="m.machinepowerconsumption" property="machinePowerConsumption" />
+		<result column="m.machinecompany" property="machineCompany" />
+		<result column="su.setupstatus" property="setupStatus" />		
+	</resultMap>	
+	
+	<select id="getMachineList" resultMap="machineListResult">
+		SELECT
+			<include refid="machineJoinColumns" />
+		FROM
+			machine m, setup su
+		WHERE
+			m.machineno = su.machineno(+)
+		AND
+			m.machinedeleted = 0			   
+		ORDER BY
+			m.machineno DESC
+	</select>
+	
+	<select id="getMachineListByPage" resultType="Machine" parameterType="hashMap">
+		SELECT  
+	    	<include refid="machineJoinPageColumns" /> 
+	    FROM	   
+	    ( 			
+	    	SELECT
+	    		rownum idx, s.*  
+	    	FROM  	   
+	    	( 			   
+	    		SELECT
+					<include refid="machineJoinColumns" />
+				FROM
+					machine m, setup su
+				WHERE
+					m.machineno = su.machineno(+)
+				AND
+					m.machinedeleted = 0			   
+				ORDER BY
+					m.machineno	DESC
+	    	) s	   
+	    )  	   
+	    WHERE  
+	    	idx >= #{ first } AND idx &lt; #{ last }	    
+	</select>
+		
+	<select id="getMachineCount" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			machine 
+		WHERE 
+			machinedeleted = 0		
+	</select>
+		
+	<select id="getSetupStatusByMachineNo" parameterType="int" resultType="String">
+		SELECT 
+			setupstatus
+		FROM 
+			setup
+		WHERE 
+			machineno = #{ machineNo }
+	</select>
+	
+	<insert id="insertMachine" parameterType="Machine">
+		INSERT INTO machine 
+		(
+			machineno, 
+			machinemodelname, 
+			machineweight, 
+			machinewidth, 
+			machinedepth, 
+			machineheight, 
+			machinepowerconsumption, 
+			machinecompany, 
+			machinetype
+		)
+		VALUES
+		(
+			machine_seq.nextval, 
+			#{ machineModelName }, 
+			#{ machineWeight }, 
+			#{ machineWidth }, 
+			#{ machineDepth }, 
+			#{ machineHeight }, 
+			#{ machinePowerConsumption }, 
+			#{ machineCompany }, 
+			#{ machineType }
+		)
+	</insert>
+	
+	<sql id="machineColumns">
+		machineno, machinemodelname, machineweight, machinewidth, machinedepth, machineheight,
+		machinepowerconsumption, machinecompany, machinetype
+	</sql>
+	
+	<select id="getMachineByMachineNo" parameterType="int" resultType="Machine">
+		SELECT
+			<include refid="machineColumns" />			
+		FROM 
+			machine
+		WHERE 
+			machineno = #{ machineNo }
+	</select>
+	
+	<update id="updateMachine" parameterType="Machine">
+		UPDATE machine SET
+			machinemodelname = #{ machineModelName }, 
+			machineweight = #{ machineWeight }, 
+			machinewidth = #{ machineWidth }, 
+			machinedepth = #{ machineDepth }, 
+			machineheight = #{ machineHeight }, 
+			machinepowerconsumption = #{ machinePowerConsumption }, 
+			machinecompany = #{ machineCompany }, 
+			machinetype = #{ machineType }				
+		WHERE 
+			machineno = #{ machineNo }
+	</update>
+	
+	<delete id="deleteMachine" parameterType="int">
+		UPDATE machine set 
+			machinedeleted = '1' 
+		WHERE 
+			machineno = #{ machineNo }
+	</delete>
+		
+	<select id="getUsableMachineList" parameterType="hashMap" resultType="Machine">
+	   	SELECT 
+	   		<include refid="machineJoinPageColumns" /> 
+		FROM  		   
+		( 			
+			SELECT
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT
+					<include refid="machineJoinColumns" />					  
+				FROM  
+					machine m, setup su  		
+				WHERE  
+					m.machineno = su.machineno(+)  
+				AND  
+					m.machinedeleted = 0  			   
+				ORDER BY  
+					m.machineno DESC 			
+			) s
+			WHERE  
+				s.setupstatus = '회수'  
+			OR  
+				s.setupstatus IS NULL  
+		)  
+		WHERE
+			idx >= #{ first } AND idx &lt; #{ last }	
+	</select>
+		
+	<select id="getUsableMachineCount" resultType="int">
+		SELECT 
+			COUNT(m.machineno)
+		FROM 
+			machine m, setup s 
+		WHERE 
+			m.machineno = s.machineno(+) 
+		AND 
+			m.machinedeleted = 0
+		AND 
+			(s.setupstatus = '회수' OR s.setupstatus IS NULL)
+	</select>
+		
+	<select id="getMachineSearchList" parameterType="hashMap" resultType="Machine">
+		SELECT 
+	   		<include refid="machineJoinPageColumns" /> 
+		FROM  		   
+		( 			
+			SELECT
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT
+					<include refid="machineJoinColumns" />					  
+				FROM  
+					machine m, setup su  		
+				WHERE  
+					m.machineno = su.machineno(+)  
+				AND  
+					m.machinedeleted = 0					
+				<choose>
+					<when test="searchType in {'machineno', 'machinemodelname', 'machinetype', 'machinepowerconsumption', 
+							'machinecompany', 'machinewidth', 'machinedepth', 'machineheight'}">
+						AND
+							LOWER(m.${ searchType }) LIKE '%${ searchValue }%'
+					</when>
+					<otherwise>
+						<choose>
+							<when test="searchValue == '회수'">
+								AND
+									(LOWER(su.${ searchType }) LIKE '%${ searchValue }%' OR su.${ searchType } IS NULL)
+						    </when>				    
+						    <otherwise>
+						    	AND
+						    		LOWER(su.${ searchType }) LIKE '%${ searchValue }%'
+						    </otherwise>
+						</choose>									  
+					</otherwise>				
+				</choose>	
+				ORDER BY  
+					m.machineno DESC		
+			) s			  
+		)  
+		WHERE
+			idx >= #{ first } AND idx &lt; #{ last }		
+	</select>
+	
+	<select id="getMachineSearchListCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*)  
+		FROM 
+			machine m, setup s  
+		WHERE 
+			m.machinedeleted  = 0  
+		AND 
+			m.machineno = s.machineno(+)
+		<choose>
+			<when test="searchType in {'machineno', 'machinemodelname', 'machinetype', 'machinepowerconsumption', 
+					'machinecompany', 'machinewidth', 'machinedepth', 'machineheight'}">
+				AND
+					LOWER(m.${ searchType }) LIKE '%${ searchValue }%'
+			</when>
+			<otherwise>
+				<choose>
+					<when test="searchValue == '회수'">
+						AND
+							(LOWER(s.${ searchType }) LIKE '%${ searchValue }%' OR s.${ searchType } IS NULL)
+				    </when>				    
+				    <otherwise>
+				    	AND
+				    		LOWER(s.${ searchType }) LIKE '%${ searchValue }%'
+				    </otherwise>
+				</choose>									  
+			</otherwise>				
+		</choose>	
+	</select>
+	
+</mapper>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd">
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	
+	<aop:aspectj-autoproxy />
+
+	<context:component-scan base-package="com.machinemanager.model.dao" />
+	<!-- <context:component-scan base-package="com.mvcdemoweb3.advice" /> -->
+			
+	<bean id="dataSource"
+		class="org.apache.commons.dbcp2.BasicDataSource"
+		p:driverClassName="oracle.jdbc.OracleDriver"
+		p:url="jdbc:oracle:thin:@210.16.214.196:1521:xe"
+		p:username="thirty"
+		p:password="oracle"
+		p:maxIdle="20"
+		p:maxTotal="100"
+		p:maxWaitMillis="1000">		
+	</bean>
+	
+	<bean id="sessionFactory"
+		class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:mybatis-config.xml" />	
+	</bean>
+	
+	<!-- MyBatis의 SqlSession을 Wrapping한 스프링의 클래스 -->
+	<bean id="sessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg ref="sessionFactory" />
+	</bean>
+	
+	<!-- Mapper Beans -->
+
+	 <bean id="machineStockMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.machinemanager.model.mapper.MachineStockMapper" />
+		<property name="sqlSessionFactory" ref="sessionFactory" />
+	 </bean>
+
+	<bean id="machineMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.machinemanager.model.mapper.MachineMapper" />
+		<property name="sqlSessionFactory" ref="sessionFactory" />
+	</bean>
+	
+	<bean id="setupMapper"
+		class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.machinemanager.model.mapper.SetupMapper" />			
+		<property name="sqlSessionFactory" ref="sessionFactory" />
+	</bean>
+	
+	<bean id="leaseMapper"
+		class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.machinemanager.model.mapper.LeaseMapper" />
+		<property name="sqlSessionFactory" ref="sessionFactory" />
+	</bean>
+			
+	<bean id="productStockMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.machinemanager.model.mapper.ProductStockMapper" />
+		<property name="sqlSessionFactory" ref="sessionFactory" />	
+	</bean>	
+	
+	<bean id="supplyMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.machinemanager.model.mapper.SupplyMapper" />
+		<property name="sqlSessionFactory" ref="sessionFactory" />
+	</bean>
+	
+	<bean id="productMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.machinemanager.model.mapper.ProductMapper" />
+		<property name="sqlSessionFactory" ref="sessionFactory" />	
+	</bean>
+
+	<bean id="orderMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.machinemanager.model.mapper.OrderMapper" />
+		<property name="sqlSessionFactory" ref="sessionFactory" />
+	</bean>
+	
+
+	<!-- ===================================================================== -->
+			
+	<!-- <bean id="demoWebAdviceBean" class="com.mvcdemoweb3.advice.DemoWebAdvice" />
+	
+	<aop:config>
+		<aop:aspect ref="demoWebAdviceBean">				
+			<aop:pointcut id="timePointCut"
+				expression="within(com.mvcdemoweb3.model.dao.*)" />			
+			<aop:around method="logExecutionTime" pointcut-ref="timePointCut" />
+			<aop:pointcut id="exceptionPointCut" 
+				expression="within(com.mvcdemoweb3.controller.*)" />
+			<aop:after-throwing method="logException" 
+				throwing="ex" pointcut-ref="exceptionPointCut" />	
+		</aop:aspect>		
+	</aop:config> -->
+		
+</beans>

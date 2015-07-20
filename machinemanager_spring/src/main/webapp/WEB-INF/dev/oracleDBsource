@@ -1,0 +1,219 @@
+
+CREATE TABLE lease
+(
+	leaseNo              NUMBER NOT NULL ,
+	leaseName            VARCHAR2(60) NOT NULL ,
+	leaseAddress         VARCHAR2(200) NOT NULL ,
+	leaseCost            NUMBER NOT NULL ,
+	leaseDate            DATE NOT NULL ,
+	leaseExpirationDate  DATE NOT NULL ,
+	lessor               VARCHAR2(20) NOT NULL ,
+	lessorPhone          VARCHAR2(15) NOT NULL ,
+	leaseNote            VARCHAR2(400) NULL 
+);
+
+CREATE UNIQUE INDEX XPKlease ON lease
+(leaseNo   ASC);
+
+ALTER TABLE lease
+	ADD CONSTRAINT  XPKlease PRIMARY KEY (leaseNo);
+
+CREATE TABLE machine
+(
+	machineNo            NUMBER NOT NULL ,
+	machineWeight        NUMBER NOT NULL ,
+	machineWidth         NUMBER NOT NULL ,
+	machineDepth         NUMBER NOT NULL ,
+	machineHeight        NUMBER NOT NULL ,
+	machinePowerConsumption NUMBER NOT NULL ,
+	machineCompany       VARCHAR2(60) NOT NULL ,
+	machineType          VARCHAR2(50) NOT NULL 
+);
+
+CREATE UNIQUE INDEX XPKmachine ON machine
+(machineNo   ASC);
+
+ALTER TABLE machine
+	ADD CONSTRAINT  XPKmachine PRIMARY KEY (machineNo);
+
+CREATE TABLE product
+(
+	productNo            NUMBER NOT NULL ,
+	productType          VARCHAR(20) NOT NULL ,
+	productName          VARCHAR(30) NOT NULL ,
+	productCompany       VARCHAR(60) NOT NULL ,
+	productExpirationDate DATE NOT NULL ,
+	productPrice         NUMBER NOT NULL ,
+	productSalePrice     NUMBER NOT NULL ,
+	productUse           CHAR(1) NOT NULL ,
+	productCount         NUMBER NOT NULL ,
+	productMeasure       VARCHAR(10) NOT NULL 
+);
+
+CREATE UNIQUE INDEX XPKproduct ON product
+(productNo   ASC);
+
+ALTER TABLE product
+	ADD CONSTRAINT  XPKproduct PRIMARY KEY (productNo);
+
+CREATE TABLE setup
+(
+	setupDate            DATE NOT NULL ,
+	setupCost            NUMBER NOT NULL ,
+	setupStatus          VARCHAR2(15) NOT NULL ,
+	leaseNo              NUMBER NOT NULL ,
+	machineNo            NUMBER NOT NULL ,
+	setupNo              NUMBER NOT NULL ,
+	withdrawDate         DATE NULL ,
+	withdrawReason       VARCHAR2(200) NULL 
+);
+
+CREATE UNIQUE INDEX XPKsetup ON setup
+(setupNo   ASC);
+
+ALTER TABLE setup
+	ADD CONSTRAINT  XPKsetup PRIMARY KEY (setupNo);
+
+CREATE INDEX XIF1setup ON setup
+(leaseNo   ASC);
+
+CREATE INDEX XIF2setup ON setup
+(machineNo   ASC);
+
+CREATE TABLE machineStock
+(
+	machineStockRemain   NUMBER NOT NULL ,
+	productNo            NUMBER NOT NULL ,
+	setupNo              NUMBER NOT NULL ,
+	machineStockNo       NUMBER NOT NULL ,
+	machineStockMaxCount NUMBER NOT NULL 
+);
+
+CREATE UNIQUE INDEX XPKmachineStock ON machineStock
+(machineStockNo   ASC);
+
+ALTER TABLE machineStock
+	ADD CONSTRAINT  XPKmachineStock PRIMARY KEY (machineStockNo);
+
+CREATE INDEX XIF4machineStock ON machineStock
+(productNo   ASC);
+
+CREATE INDEX XIF5machineStock ON machineStock
+(setupNo   ASC);
+
+CREATE TABLE machineStockIO
+(
+	machineStockIONo     NUMBER NOT NULL ,
+	machineStockIODate   DATE NOT NULL ,
+	machineStockIOCount  NUMBER NOT NULL ,
+	productStockNo       NUMBER NOT NULL ,
+	machineStockInputOrOutput VARCHAR2(10) NOT NULL 
+);
+
+CREATE UNIQUE INDEX XPKmachineStockIO ON machineStockIO
+(machineStockIONo   ASC);
+
+ALTER TABLE machineStockIO
+	ADD CONSTRAINT  XPKmachineStockIO PRIMARY KEY (machineStockIONo);
+
+CREATE INDEX XIF1machineStockIO ON machineStockIO
+(productStockNo   ASC);
+
+CREATE TABLE supply
+(
+	supplyNo             NUMBER NOT NULL ,
+	supplyName           VARCHAR2(60) NOT NULL ,
+	supplyAddress        VARCHAR2(200) NOT NULL ,
+	supplyPhone          VARCHAR2(15) NOT NULL ,
+	supplier             VARCHAR2(20) NOT NULL ,
+	supplierPhone        VARCHAR2(15) NOT NULL ,
+	supplyNote           VARCHAR2(400) NULL 
+);
+
+CREATE UNIQUE INDEX XPKsupply ON supply
+(supplyNo   ASC);
+
+ALTER TABLE supply
+	ADD CONSTRAINT  XPKsupply PRIMARY KEY (supplyNo);
+
+CREATE TABLE orders
+(
+	ordersNo             NUMBER NOT NULL ,
+	ordersTotalPrice     NUMBER NOT NULL ,
+	orderer              VARCHAR2(20) NOT NULL ,
+	supplyNo             NUMBER NOT NULL ,
+	ordersDate           DATE NOT NULL 
+);
+
+CREATE UNIQUE INDEX XPKorders ON orders
+(ordersNo   ASC);
+
+ALTER TABLE orders
+	ADD CONSTRAINT  XPKorders PRIMARY KEY (ordersNo);
+
+CREATE INDEX XIF2orders ON orders
+(supplyNo   ASC);
+
+CREATE TABLE ordersDetail
+(
+	productNo            NUMBER NOT NULL ,
+	ordersDetailCount    NUMBER NOT NULL ,
+	orderDetailPrice     NUMBER NOT NULL ,
+	ordersNo             NUMBER NOT NULL 
+);
+
+CREATE UNIQUE INDEX XPKordersDetail ON ordersDetail
+(productNo   ASC,ordersNo   ASC);
+
+ALTER TABLE ordersDetail
+	ADD CONSTRAINT  XPKordersDetail PRIMARY KEY (productNo,ordersNo);
+
+CREATE INDEX XIF1ordersDetail ON ordersDetail
+(productNo   ASC);
+
+CREATE INDEX XIF2ordersDetail ON ordersDetail
+(ordersNo   ASC);
+
+CREATE TABLE productStock
+(
+	stockNo              NUMBER NOT NULL ,
+	productStockDate     DATE NOT NULL ,
+	productNo            NUMBER NOT NULL ,
+	ordersNo             NUMBER NOT NULL 
+);
+
+CREATE UNIQUE INDEX XPKproductStock ON productStock
+(stockNo   ASC);
+
+ALTER TABLE productStock
+	ADD CONSTRAINT  XPKproductStock PRIMARY KEY (stockNo);
+
+CREATE INDEX XIF1productStock ON productStock
+(productNo   ASC,ordersNo   ASC);
+
+ALTER TABLE setup
+	ADD (CONSTRAINT R_8 FOREIGN KEY (leaseNo) REFERENCES lease (leaseNo));
+
+ALTER TABLE setup
+	ADD (CONSTRAINT R_9 FOREIGN KEY (machineNo) REFERENCES machine (machineNo));
+
+ALTER TABLE machineStock
+	ADD (CONSTRAINT R_40 FOREIGN KEY (productNo) REFERENCES product (productNo));
+
+ALTER TABLE machineStock
+	ADD (CONSTRAINT R_53 FOREIGN KEY (setupNo) REFERENCES setup (setupNo));
+
+ALTER TABLE machineStockIO
+	ADD (CONSTRAINT R_54 FOREIGN KEY (productStockNo) REFERENCES machineStock (machineStockNo) ON DELETE SET NULL);
+
+ALTER TABLE orders
+	ADD (CONSTRAINT R_18 FOREIGN KEY (supplyNo) REFERENCES supply (supplyNo));
+
+ALTER TABLE ordersDetail
+	ADD (CONSTRAINT R_19 FOREIGN KEY (productNo) REFERENCES product (productNo));
+
+ALTER TABLE ordersDetail
+	ADD (CONSTRAINT R_46 FOREIGN KEY (ordersNo) REFERENCES orders (ordersNo));
+
+ALTER TABLE productStock
+	ADD (CONSTRAINT R_36 FOREIGN KEY (productNo, ordersNo) REFERENCES ordersDetail (productNo, ordersNo));

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.machinemanager.model.mapper.ProductMapper">
+	
+	<insert id="insertProduct" parameterType="Product" useGeneratedKeys="true" keyColumn="productno" keyProperty="productNo">
+		INSERT INTO 
+			product
+		(
+			productno, 
+			productname, 
+			producttype, 
+			productcompany, 
+			productexpirationdate, 
+			productprice, 
+			productsaleprice, 
+			productmeasure
+		) 
+		VALUES 
+		(
+			product_seq.nextval, 
+			#{ productName }, 
+			#{ productType }, 
+			#{ productCompany }, 
+			#{ productExpirationDate }, 
+			#{ productPrice }, 
+			#{ productSalePrice }, 
+			#{ productMeasure }
+		)
+	</insert>
+	
+	<sql id="productcolumn">
+		productno, producttype, productname, productcompany, productexpirationdate,
+		productprice, productsaleprice, productuse, productmeasure
+	</sql>
+	
+	<select id="getProductList" parameterType="Product" resultType="Product">
+		SELECT 
+			<include refid="productcolumn" />	 
+		FROM 
+			product 
+	</select>
+	
+	<select id="getProductListByPage" parameterType="hashMap" resultType="Product">
+		SELECT 
+			<include refid="productcolumn" />
+		FROM 
+		(
+			SELECT
+				rownum idx, 
+				p.*
+			FROM 
+			(
+				SELECT 
+			    	<include refid="productcolumn" /> 
+			   	FROM 
+			       	product 
+			   	ORDER BY 
+			       	productexpirationdate ASC
+			) p 
+		)		
+		WHERE 
+			idx &gt;= #{ first } AND idx &lt; #{ last }
+	</select>
+	
+	<select id="getProductListBySearchPage" parameterType="hashMap" resultType="Product">
+		SELECT
+			<include refid="productcolumn" />
+		FROM
+		(
+			SELECT
+				rownum idx,
+				s.*
+			FROM
+			(
+				SELECT
+					<include refid="productcolumn" />
+				FROM
+					product
+				WHERE
+					<choose>
+						<when test="searchtype == 'producttype'">
+							producttype LIKE '%${ searchvalue }%'
+						</when>
+						<when test="searchtype == 'productcompany'">
+							productcompany LIKE '%${ searchvalue }%'
+						</when>
+						<when test="searchtype == 'productname'">
+							productname LIKE '%${ searchvalue }%'
+						</when>
+						<when test="searchtype == 'productexpirationdate'">
+							productexpirationdate LIKE '%${ searchvalue }%'
+						</when>
+					</choose>
+			) s	
+		)
+		WHERE 
+			idx &gt;= #{ first } AND idx &lt; #{ last }
+	</select>
+	
+	
+	<select id="getProductCount" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			product
+	</select>
+	
+	<select id="getProductSearchCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+		(
+			SELECT
+				<include refid="productcolumn" />
+			FROM
+				product
+			WHERE
+				<choose>
+					<when test="searchtype == 'producttype'">
+						producttype LIKE '%${ searchvalue }%'
+					</when>
+					<when test="searchtype == 'productcompany'">
+						productcompany LIKE '%${ searchvalue }%'
+					</when>
+					<when test="searchtype == 'productname'">
+						productname LIKE '%${ searchvalue }%'
+					</when>
+					<when test="searchtype == 'productexpirationdate'">
+						productexpirationdate LIKE '%${ searchvalue }%'
+					</when>
+				</choose>
+		) 
+	</select>
+		
+	<select id="getproductByProductNo" parameterType="int" resultType="Product">
+		SELECT
+			<include refid="productcolumn" />
+		FROM 
+			product 
+		WHERE 
+			productno= #{ productNo } 
+	</select>
+	
+	<select id="updateProduct" parameterType="Product">
+		UPDATE
+			product
+		SET
+			productname= #{ productName }, 
+			producttype= #{ productType }, 
+			productcompany= #{ productCompany }, 
+			productexpirationdate= #{ productExpirationDate }, 
+			productprice= #{ productPrice }, 
+			productsaleprice= #{ productSalePrice }
+		WHERE 
+			productno= #{ productNo }
+	</select>
+	
+	<select id="deleteproduct" parameterType="int">
+		UPDATE
+			product
+		SET 
+			ProductUse = '1' 
+		WHERE
+			productno= #{ productNo }
+	</select>
+</mapper>

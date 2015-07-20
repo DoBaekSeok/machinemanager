@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<!-- namespace : 패키지명.클래스이름 을 논리적으로 선언 -->
+<mapper namespace="com.machinemanager.model.mapper.MachineStockMapper">
+
+	<select id="getMachineNoList" resultType="String">
+		SELECT 
+			machineno 
+		FROM 
+			setup 
+		WHERE 
+			setupstatus like '가동%' 
+	</select>
+
+	<insert id="inputProduct" parameterType="hashMap" >
+		INSERT INTO machinestock
+		(
+			machinestockremain, 
+			productno, 
+			setupno, 
+			machinestockno, 
+			machinestockmaxcount
+		) 
+		VALUES 
+		(	
+			0 ,
+			#{ productNo }, 
+			#{ setupNo }, 
+			machinestock_seq.nextval,
+			100
+		)
+	</insert>
+	
+	<update id="updateMachineStock" parameterType="hashMap">
+		update 
+			machinestock 
+		set 
+			machinestockremain = #{ count }
+		where 
+			machinestockno = #{ machineStockNo }
+	</update>
+	
+	<select id="getProductStockByMachineStockNo" parameterType="int" resultType="MachineStock">
+		SELECT 
+			machinestockno, 
+			productno, 
+			setupno, 
+			machinestockremain, 
+			machinestockmaxcount 
+		FROM 
+			machinestock 
+		WHERE 
+			machinestockno = #{ machineStockNo }
+	</select>
+	
+	<select id="getProductStockByMachineNoANDProductNo" parameterType="hashMap" resultType="MachineStock">
+		SELECT machinestockno, productno, setupno, machinestockremain, machinestockmaxcount 
+		FROM machinestock 
+		WHERE setupno = #{machineNo} AND productno = #{productNo}
+	</select>
+	
+	<insert id="inputMachineStockIO" parameterType="Hashmap">
+		INSERT INTO machinestockio
+		(
+			machinestockiono, 
+			machinestockiodate, 
+			machinestockiocount, 
+			machinestockno, 
+			machinestockinputoroutput
+		) 
+		VALUES 
+		(
+			machinestockio_seq.nextval, 
+			sysdate, 
+			#{machineStockIOCount}, 
+			#{machineStockNo}, 
+			'입고'
+		)
+	</insert>
+	
+	<insert id="outputMachineStockIO" parameterType="hashMap">
+		INSERT INTO machinestockio
+		(
+			machinestockiono, 
+			machinestockiodate, 
+			machinestockiocount, 
+			machinestockno, 
+			machinestockinputoroutput
+		) 
+		VALUES 
+		(
+			machinestockio_seq.nextval, 
+			sysdate, 
+			#{machineStockIOCount},
+			#{machineStockNo}, 
+			'출고'
+		)	
+	</insert>
+	
+	<select id="getSetupNoList" resultType="String">
+		select 
+			setupno 
+		from 
+			setup 
+		where  
+			setupstatus like '가동중%' order by setupno
+	</select>
+	
+	<select id="getMachineStockListByMachineNo" parameterType="int" resultType="MachineStock">
+		select 
+			ms.setupno, 
+			ms.MACHINESTOCKNO, 
+			ms.MACHINESTOCKREMAIN, 
+			ms.PRODUCTNO, 
+			p.productname, 
+			p.productsaleprice 
+		from 
+			machinestock ms, 
+			(
+				select 
+					setupno 
+				from 
+					setup 
+				where 
+					setupstatus like '가동중%'
+			) mn, 
+			product p 
+		where 
+			ms.setupno = mn.setupno AND ms.productno = p.productno AND ms.setupno = #{setupNo} order by ms.PRODUCTNO
+	</select>
+	
+	<select id="getMachineStockIOList" parameterType="hashMap" resultType="MachineStockIO">
+		SELECT
+			machinestockiono, 
+   			machinestockinputoroutput, 
+   			machinestockiodate,
+		    machineno, 
+		    machinemodelname, 
+		    productname, 
+		    machinestockiocount
+		FROM	   			   
+		(			
+				SELECT
+			   		rownum idx, s.* 
+			   FROM 
+			   (
+			   		SELECT
+			   			msio.machinestockiono, 
+			   			msio.machinestockinputoroutput, 
+			   			msio.machinestockiodate,
+					    s.machineno, 
+					    m.machinemodelname, 
+					    p.productname, 
+					    msio.machinestockiocount
+					FROM
+					   machinestockio msio, 
+					   machinestock ms, 
+					   setup s, 
+					   product p, 
+					   machine m	
+					WHERE
+					   msio.machinestockno = ms.machinestockno
+					   AND 
+					   ms.setupno = s.setupno 
+					   AND 
+					   ms.productno = p.productno 
+					   AND 
+					   m.machineno = s.machineno 
+					ORDER BY
+					   msio.machinestockiodate DESC			
+				) s 			   
+		)			   
+		WHERE
+			idx >= #{first} 
+			AND 
+			idx &lt; #{last}			
+	</select>
+	
+	<select id="getMachineStockIOCount" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM
+			machinestockio
+	</select>
+	
+	<select id="getSearchMachineStockIOList" parameterType="hashMap" resultType="MachineStockIO">
+		SELECT
+			machinestockiono, 
+   			machinestockinputoroutput, 
+   			machinestockiodate,
+		    machineno, 
+		    machinemodelname, 
+		    productname, 
+		    machinestockiocount
+		FROM	   			   
+		(			
+				SELECT
+			   		rownum idx, s.* 
+			   FROM 
+			   (
+			   		SELECT
+			   			msio.machinestockiono, 
+			   			msio.machinestockinputoroutput, 
+			   			msio.machinestockiodate,
+					    s.machineno, 
+					    m.machinemodelname, 
+					    p.productname, 
+					    msio.machinestockiocount
+					FROM
+					    machinestockio msio, 
+					    machinestock ms, 
+					    setup s, 
+					    product p, 
+					    machine m	
+					WHERE
+					    msio.machinestockno = ms.machinestockno
+				    AND 
+				    	ms.setupno = s.setupno 
+				    AND 
+				    	ms.productno = p.productno 
+				    AND 
+				    	m.machineno = s.machineno
+				    <choose>
+				    	<when test="searchType in {'machinestockiono', 'machinestockinputoroutput'}">
+				    		AND
+								LOWER(msio.${ searchType }) LIKE '%${ searchValue }%'
+				    	</when>
+				    	<when test="searchType in 'machineno'">
+				    		AND
+								LOWER(s.${ searchType }) LIKE '%${ searchValue }%'
+				    	</when>
+				    	<when test="searchType in 'machinemodelname'">
+				    		AND
+								LOWER(m.${ searchType }) LIKE '%${ searchValue }%'
+				    	</when>
+				    	<when test="searchType in 'productname'">
+				    		AND
+								LOWER(p.${ searchType }) LIKE '%${ searchValue }%'
+				    	</when>
+				    </choose>		
+					ORDER BY
+					   msio.machinestockiodate DESC			
+				) s 			   
+		)			   
+		WHERE
+			idx >= #{first} 
+			AND 
+			idx &lt; #{last}			
+	</select>
+	
+	<select id="getSearchMachineStockIOCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM
+			machinestockio msio, 
+		    machinestock ms, 
+		    setup s, 
+		    product p, 
+		    machine m
+		WHERE
+			msio.machinestockno = ms.machinestockno
+		    AND 
+		    ms.setupno = s.setupno 
+		    AND 
+		    ms.productno = p.productno 
+		    AND 
+		    m.machineno = s.machineno
+			<choose>
+		    	<when test="searchType in {'machinestockiono', 'machinestockinputoroutput'}">
+		    		AND
+						LOWER(msio.${ searchType }) LIKE '%${ searchValue }%'
+		    	</when>
+		    	<when test="searchType in 'machineno'">
+		    		AND
+						LOWER(s.${ searchType }) LIKE '%${ searchValue }%'
+		    	</when>
+		    	<when test="searchType in 'machinemodelname'">
+		    		AND
+						LOWER(m.${ searchType }) LIKE '%${ searchValue }%'
+		    	</when>
+		    	<when test="searchType in 'productname'">
+		    		AND
+						LOWER(p.${ searchType }) LIKE '%${ searchValue }%'
+		    	</when>
+		    </choose>	
+	</select>
+	
+	<select id="getSearchMachineStockIOListByCount" parameterType="hashMap" resultType="MachineStockIO">
+		SELECT
+			machinestockiono, 
+   			machinestockinputoroutput, 
+   			machinestockiodate,
+		    machineno, 
+		    machinemodelname, 
+		    productname, 
+		    machinestockiocount
+		FROM	   			   
+		(			
+				SELECT
+			   		rownum idx, s.* 
+			   FROM 
+			   (
+			   		SELECT
+			   			msio.machinestockiono, 
+			   			msio.machinestockinputoroutput, 
+			   			msio.machinestockiodate,
+					    s.machineno, 
+					    m.machinemodelname, 
+					    p.productname, 
+					    msio.machinestockiocount
+					FROM
+					    machinestockio msio, 
+					    machinestock ms, 
+					    setup s, 
+					    product p, 
+					    machine m	
+					WHERE
+					    msio.machinestockno = ms.machinestockno
+				    AND 
+				    	ms.setupno = s.setupno 
+				    AND 
+				    	ms.productno = p.productno 
+				    AND 
+				    	m.machineno = s.machineno				    
+		    		AND
+		    			msio.${ searchType } BETWEEN '${ searchCountFirstValue }' AND '${ searchCountLastValue }'						
+					ORDER BY
+					   msio.machinestockiodate DESC			
+				) s 			   
+		)			   
+		WHERE
+			idx >= #{first} 
+			AND 
+			idx &lt; #{last}			
+	</select>
+	
+	<select id="getSearchMachineStockIOListByCountCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM
+			machinestockio msio, 
+		    machinestock ms, 
+		    setup s, 
+		    product p, 
+		    machine m
+		WHERE
+			msio.machinestockno = ms.machinestockno
+	    AND 
+		    ms.setupno = s.setupno 
+	    AND 
+		    ms.productno = p.productno 
+	    AND 
+		    m.machineno = s.machineno
+	    AND
+   			msio.${ searchType } BETWEEN '${ searchCountFirstValue }' AND '${ searchCountLastValue }'
+	</select>
+	
+	<select id="getSearchMachineStockIOListByDate" parameterType="hashMap" resultType="MachineStockIO">
+		SELECT
+			machinestockiono, 
+   			machinestockinputoroutput, 
+   			machinestockiodate,
+		    machineno, 
+		    machinemodelname, 
+		    productname, 
+		    machinestockiocount
+		FROM	   			   
+		(			
+				SELECT
+			   		rownum idx, s.* 
+			   FROM 
+			   (
+			   		SELECT
+			   			msio.machinestockiono, 
+			   			msio.machinestockinputoroutput, 
+			   			msio.machinestockiodate,
+					    s.machineno, 
+					    m.machinemodelname, 
+					    p.productname, 
+					    msio.machinestockiocount
+					FROM
+					    machinestockio msio, 
+					    machinestock ms, 
+					    setup s, 
+					    product p, 
+					    machine m	
+					WHERE
+					    msio.machinestockno = ms.machinestockno
+				    AND 
+				    	ms.setupno = s.setupno 
+				    AND 
+				    	ms.productno = p.productno 
+				    AND 
+				    	m.machineno = s.machineno
+				   	AND  
+						msio.${ searchType } BETWEEN '${ searchDateFirstValue }' AND '${ searchDateLastValue }'
+					ORDER BY
+					   msio.machinestockiodate DESC			
+				) s 			   
+		)			   
+		WHERE
+			idx >= #{first} 
+			AND 
+			idx &lt; #{last}			
+	</select>
+	
+	<select id="getSearchMachineStockIOListByDateCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM
+			machinestockio msio, 
+		    machinestock ms, 
+		    setup s, 
+		    product p, 
+		    machine m
+		WHERE
+			msio.machinestockno = ms.machinestockno
+		AND 
+		    ms.setupno = s.setupno 
+		AND 
+		    ms.productno = p.productno 
+		AND 
+		    m.machineno = s.machineno
+		AND  
+			msio.${ searchType } BETWEEN '${ searchDateFirstValue }' AND '${ searchDateLastValue }'
+	</select>
+	
+</mapper>
+
+
+

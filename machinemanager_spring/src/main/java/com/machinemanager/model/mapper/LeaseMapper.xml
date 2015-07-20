@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace : 패키지명.클래스이름 을 논리적으로 선언 -->
+<mapper namespace="com.machinemanager.model.mapper.LeaseMapper">
+
+
+	<sql id="leaseListColumns">
+	leaseno, leasename, leaseaddress, leasecost, leasedate, leaseexpirationdate,
+	lessor, lessorphone, leaseemail, leasenote, leasedeleted
+	</sql>
+
+	<insert id="insertLease" parameterType="Lease">
+		INSERT INTO Lease
+		(
+		leaseno,
+		leasename,
+		leaseaddress,
+		leasecost,
+		leaseDate,
+		leaseExpirationDate,
+		lessor,
+		lessorPhone,
+		leaseemail,
+		leaseNote
+		)
+		VALUES
+		(
+		lease_seq.nextval,
+		#{ leaseName },
+		#{ leaseAddress},
+		#{ leaseCost },
+		#{ leaseDate },
+		#{ leaseExpirationDate },
+		#{ lessor },
+		#{ lessorPhone },
+		#{ leaseEmail },
+		#{ leaseNote }
+		)
+	</insert>
+
+	<update id="updateLease" parameterType="Lease">
+		UPDATE
+			lease
+		SET
+		leasename= #{leaseName},
+		leaseaddress= #{leaseAddress},
+		leasecost= #{leaseCost},
+		leasedate= #{leaseDate},
+		leaseexpirationdate= #{leaseExpirationDate},
+		lessor= #{lessor},
+		lessorphone= #{lessorPhone},
+		leaseemail= #{leaseEmail},
+		leasenote= #{leaseNote}
+		WHERE
+		leaseNo= #{leaseNo}
+	</update>
+
+	<update id="deleteLease" parameterType="Lease">
+		UPDATE
+			lease
+		SET
+			leaseDeleted = '1'
+		WHERE
+			leaseno= #{leaseNo}
+	</update>
+
+	<select id="getLeaseList" resultType="Lease">
+		SELECT
+			leaseno, leasename, leasedate, leaseExpirationDate, lessor, lessorPhone,
+			leasedeleted
+		FROM
+			lease
+	</select>
+
+	<select id="getPagedLeaseList" parameterType="hashMap"
+		resultType="Lease">
+		SELECT
+		<include refid="leaseListColumns" />
+		FROM
+		(
+		SELECT
+			rownum idx, s.*
+		FROM
+		(
+		SELECT
+		<include refid="leaseListColumns" />
+		FROM
+			lease
+		ORDER BY
+			leaseNo DESC
+			) s
+		)
+		WHERE
+			idx >= #{first} AND idx &lt; #{last}
+	</select>
+
+	<select id="getUsableLeaseList" parameterType="hashMap"
+		resultType="Lease">
+		SELECT
+		<include refid="leaseListColumns" />
+		FROM
+		(
+		SELECT
+			rownum idx, s.*
+		FROM
+		(
+		SELECT
+		<include refid="leaseListColumns" />
+		FROM
+			lease
+		WHERE
+			leasedeleted = 0
+		ORDER BY
+			leaseno
+				) s
+			)
+		WHERE
+			idx >= #{ first } AND idx &lt; #{ last }
+	</select>
+
+	<select id="getUsableLeaseCount" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+			lease
+		WHERE
+			leasedeleted = 0
+	</select>
+
+	<select id="getLeaseCount" resultType="int">
+		SELECT
+			COUNT(*)
+		FROM
+			lease
+	</select>
+
+	<select id="getLeaseByLeaseNo" resultType="Lease">
+		SELECT
+		<include refid="leaseListColumns" />
+		FROM
+			lease
+		WHERE
+			leaseno = #{ leaseNo }
+	</select>
+	
+	
+	<select id="getLeaseSearchList" parameterType="hashMap" resultType="Lease">
+		SELECT 
+	   		<include refid="leaseListColumns" /> 
+		FROM  		   
+		( 			
+			SELECT
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT
+					<include refid="leaseListColumns" />					  
+				FROM  
+					lease  		
+				WHERE  
+					leaseDeleted = 0					
+				<choose>
+					<when test="searchType in {'leaseno', 'leasename','lessor'}">
+						AND
+							LOWER(${ searchType }) LIKE '%${ searchValue }%'
+					</when>
+								
+				</choose>	
+				ORDER BY  
+					leaseno 			
+			) s			  
+		)  
+		WHERE
+			idx >= #{ first } AND idx &lt; #{ last }		
+	</select>
+	
+	<select id="getLeaseSearchListCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*)  
+		FROM 
+			lease 
+		WHERE 
+			leaseDeleted  = 0  
+		
+		<choose>
+			<when test="searchType in {'leaseno', 'leasename', 'lessor'}">
+				AND
+					LOWER(${ searchType }) LIKE '%${ searchValue }%'
+			</when>
+						
+		</choose>	
+	</select>
+
+
+</mapper>
+
+
+

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<!-- namespace : 패키지명.클래스이름 을 논리적으로 선언 -->
+<mapper namespace="com.machinemanager.model.mapper.ProductStockMapper">
+	
+	<select id="getProductStockList" parameterType="hashMap" resultType="Product">
+		select * 
+		from ( select rownum idx, s.*
+			   from  (select p.PRODUCTCOMPANY, p.PRODUCTTYPE, p.productname, productcount, p.PRODUCTMEASURE, p.PRODUCTPRICE, p.PRODUCTSALEPRICE, p.productno 
+			   	      from product p, (select productno, sum(productCount) productcount 
+			    						from productStock 
+			    						where productStockdeleted='0' 
+			   							group by productno) spc 
+			    		where spc.productno = p.PRODUCTNO) s ) 
+			   where idx >= #{first} AND idx &lt; #{last}
+	</select>		   
+	
+	<select id="getProductDetailList" parameterType="hashMap" resultType="ProductDetail">
+		select * 
+		from ( select rownum idx, s.* 
+				from (select ps.productSTOCKNO, ps.ORDERNO, p.PRODUCTCOMPANY, p.PRODUCTTYPE, p.PRODUCTNAME, ps.PRODUCTCOUNT, p.PRODUCTMEASURE, p.PRODUCTPRICE, p.PRODUCTSALEPRICE, ps.PRODUCTSTOCKDATE 
+			   			from productStock ps, product p 
+			   	where ps.PRODUCTNO = p.PRODUCTNO AND p.productno = #{productNo} AND ps.productstockdeleted='0') s) 
+		where idx >= #{first} AND idx &lt; #{last}
+		order by PRODUCTSTOCKDATE 
+	</select>
+	
+	<update id="stockConsume" parameterType="hashMap">
+		UPDATE productstock 
+		SET productcount = #{productCount}  
+		WHERE productstockno = #{productStockNo} AND productstockdeleted='0'
+	</update>
+
+	<update id="stockConsumeDeleted" parameterType="int">
+		UPDATE productstock 
+		SET productstockdeleted='1' 
+		WHERE productstockno = #{productNo}
+	</update>
+	
+	<select id="getProductStockCount" resultType="int">
+		    select count(*) 
+			   	      from product p, (select productno, sum(productCount) productcount 
+			    						from productStock 
+			    						where productStockdeleted='0' 
+			   							group by productno) spc 
+			    		where spc.productno = p.PRODUCTNO
+	</select>
+	
+	<select id="getProductSumCountSearch" parameterType="hashMap" resultType="Product">
+		select * 
+		from ( select rownum idx, s.* 
+				from  (select p.PRODUCTCOMPANY, p.PRODUCTTYPE, p.productname, productcount, p.PRODUCTMEASURE, p.PRODUCTPRICE, p.PRODUCTSALEPRICE, p.productno 
+					   from product p, (select productno, sum(productCount) productcount 
+										from productStock 
+										where productStockdeleted = '0' 
+										group by productno) spc 
+				where spc.productno = p.PRODUCTNO AND productcount ${option} ${price} ) s) 
+		where idx >= #{first} AND idx &lt; #{last}
+	</select>
+	
+	<select id="getProductPriceSearch" parameterType="hashMap" resultType="Product">
+		select * 
+		from ( select rownum idx, s.* 
+				from  (select p.PRODUCTCOMPANY, p.PRODUCTTYPE, p.productname, productcount, p.PRODUCTMEASURE, p.PRODUCTPRICE, p.PRODUCTSALEPRICE, p.productno 
+				        from product p, (select productno, sum(productCount) productcount 
+				   						 from productStock 
+				   						 where productStockdeleted = '0' 
+				   						 group by productno) spc 
+				where spc.productno = p.PRODUCTNO AND p.${priceType} ${option} ${price} ) s) 
+		where idx >= #{first} AND idx &lt; #{last}
+	</select>
+	
+	<select id="getProductSearch" parameterType="hashMap" resultType="Product">
+		select * 
+		from ( select rownum idx, s.* 
+			   from  (select p.PRODUCTCOMPANY, p.PRODUCTTYPE, p.productname, productcount, p.PRODUCTMEASURE, p.PRODUCTPRICE, p.PRODUCTSALEPRICE, p.productno 
+			            from product p, (select productno, sum(productCount) productcount
+			   			 				from productStock 
+			   			 				where productStockdeleted = '0' 
+			   							 group by productno) spc 
+			   			where spc.productno = p.PRODUCTNO AND p.${searchType} like '%${searchValue}%' ) s ) 
+		where idx >= #{first} AND idx &lt; #{last}
+	</select>
+	
+	<update id="getStockDelete" parameterType="int">
+		UPDATE productstock set productstockdeleted = '1' WHERE productstockno = #{ProductStockNo}
+	</update>
+	
+	<insert id="insertProductStock" parameterType="hashMap">
+		insert into productstock
+		(
+			productstockno, 
+			PRODUCTSTOCKDATE, 
+			productno, 
+			orderno, 
+			productstockdeleted, 
+			productcount
+		) 
+		values
+		(
+			productstock_seq.nextval, 
+			sysdate, 
+			#{productNo}, 
+			#{orderNo}, 
+			0, 
+			#{productCount}
+		)
+	</insert>
+		
+	<select id="getOrderDetailList" parameterType="hashMap" resultType="OrderDetail">
+		select * 
+		from ( select rownum idx, s.* 
+			   from  (select od.orderno, p.productno, p.PRODUCTNAME, od.ORDERDETAILCOUNT, p.PRODUCTMEASURE, od.ORDERSTATUS  
+						from orderdetail od, product p 
+						where od.PRODUCTNO = p.PRODUCTNO 
+						order by od.orderno desc) s ) 
+		where idx >= #{first} AND idx &lt; #{last}
+	</select>
+	
+	<update id="updateOrderStatus" parameterType="hashMap">
+		UPDATE orderdetail 
+		set orderstatus = '입고완료' 
+		WHERE orderno = #{orderNo} AND productno = #{productNo} 
+	</update>
+	
+	<select id="getProductStockByProductNo" parameterType="int" resultType="ProductStock">
+		SELECT * FROM productstock WHERE productno = #{productNo}	
+	</select>	
+	
+	<select id="getStockCount" parameterType="int" resultType="int">
+		SELECT productcount 
+		FROM productstock 
+		WHERE productStockdeleted = '0' AND productstockno = #{productStockNo} 
+	</select>
+	
+	<select id="getOrderDetailSearch" parameterType="hashMap" resultType="OrderDetail">
+		select *
+		from ( select rownum idx, s.* 
+				from  (select od.orderno, p.productno, p.PRODUCTNAME, od.ORDERDETAILCOUNT, p.PRODUCTMEASURE, od.ORDERSTATUS 
+						from orderdetail od, product p
+						where od.PRODUCTNO = p.PRODUCTNO AND ${searchType} like '%${searchValue}%' 
+						order by od.orderno) s ) 
+		where idx >= #{first} AND idx &lt; #{last}
+		order by orderno desc
+	</select>
+	
+	<select id="getProductSumCountSearchCount" parameterType="hashMap" resultType="int">
+		select count(p.productno)  
+		from product p, (select productno, sum(productCount) sumcount 
+						from productStock 
+		 				where productStockdeleted = '0' 
+		 				group by productno) spc 
+		where spc.productno = p.PRODUCTNO AND sumcount ${option} ${price} 
+	</select>
+	
+	<select id="getProductPriceSearchCount" parameterType="hashMap" resultType="int">
+		select count(p.productno) 
+		from product p, (select productno, sum(productCount) sumcount 
+		 				from productStock 
+		 				where productStockdeleted = '0' 
+		 				group by productno) spc 
+		where spc.productno = p.PRODUCTNO AND p.${priceType} ${option} ${price} 
+	</select>
+	
+	<select id="getProductSearchCount" parameterType="hashMap" resultType="int">
+		select count(spc.productno)
+		from product p, (select productno, sum(productCount) productcount 
+						from productStock 
+						where productStockdeleted = '0' 
+						group by productno) spc 
+		where spc.productno = p.PRODUCTNO AND p.${searchType} like '%${searchValue}%' 
+	</select>
+	
+	<select id="getOrderDetailCount" resultType="int">
+		select count(p.productno)
+		from orderdetail od, product p 
+		where od.PRODUCTNO = p.PRODUCTNO 
+	</select>
+	
+	<select id="getOrderDetailSearchCount" parameterType="hashMap" resultType="int">
+		select count(p.productno)
+		from orderdetail od, product p 
+		where od.PRODUCTNO = p.PRODUCTNO AND ${searchType} like '%${searchValue}%' 
+		order by od.orderno 
+	</select>
+	
+	<select id="getProductDetailStockCount" parameterType="int" resultType="int">
+		select count(productno)
+		from productstock
+		where productno = #{productNo} AND productStockdeleted = '0' 
+	</select>
+	
+	
+</mapper>
+
+
+

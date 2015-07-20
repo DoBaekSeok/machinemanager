@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<!-- namespace : 패키지명.클래스이름 을 논리적으로 선언 -->
+<mapper namespace="com.machinemanager.model.mapper.SetupMapper">
+		
+	<sql id="setupJoinColumns">
+		su.setupno, su.machineno, su.leaseno, l.leasename, su.setupcost,
+		su.setupdate, su.setupstatus  	
+	</sql>
+	
+	<sql id="setupJoinPageColumns">
+		setupno, machineno, leaseno, leasename, setupcost,
+		setupdate, setupstatus  	
+	</sql>
+	
+	<select id="getSetupList" parameterType="hashMap" resultType="Setup">
+		SELECT
+			<include refid="setupJoinPageColumns" /> 
+		FROM  		   
+		( 			
+			SELECT  	
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT  
+					<include refid="setupJoinColumns" />	   	   
+				FROM  
+					setup su, lease l  			   
+				WHERE  
+					su.leaseno = l.leaseno  			   
+				AND  
+					su.setupstatus LIKE '가동%'  			   
+				ORDER BY  
+					su.setupdate DESC 			
+			) s  
+		)  
+		WHERE  
+			idx >= #{ first } AND idx &lt; #{ last }		
+	</select>
+	
+	<select id="getSetupCount" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			setup
+		WHERE
+			setupstatus LIKE '가동%' 	
+	</select>
+	
+	<select id="getSetupBySetupNo" parameterType="int" resultType="Setup">
+		SELECT 
+			s.setupno, s.machineno, s.leaseno, l.leasename, s.setupcost,
+			s.setupdate, s.withdrawdate, s.withdrawreason, s.setupstatus
+		FROM 
+			setup s, lease l
+		WHERE 
+			s.leaseno = l.leaseno
+		AND 
+			s.setupno = #{ setupNo }	
+	</select>
+	
+	<insert id="insertSetup" parameterType="Setup">
+		INSERT INTO setup
+		(
+			setupno, 
+			machineno, 
+			leaseno, 
+			setupcost, 
+			setupstatus, 
+			setupdate
+		)
+		VALUES
+		(
+			setup_seq.nextVal, 
+			#{ machineNo }, 
+			#{ leaseNo }, 
+			#{ setupCost }, 
+			#{ setupStatus }, 
+			sysdate
+		)
+	</insert>
+	
+	<select id="getUsableMachineList" resultType="Machine">
+		SELECT  
+			machineno, machinetype, machineweight, machinewidth, machinedepth,  
+			machineheight, machinepowerconsumption, machinecompany  		   
+		FROM  
+			machine 		
+		WHERE  
+			machinedeleted = 1 			   
+		ORDER BY  
+			machineno
+	</select>
+	
+	<update id="updateSetup" parameterType="Setup">
+		UPDATE setup SET
+			machineno = #{ machineNo }, 
+			leaseno = #{ leaseNo }, 
+			setupcost = #{ setupCost }, 
+			setupdate = sysdate, 
+			setupstatus = #{ setupStatus }				
+		WHERE 
+			setupno = #{ setupNo }
+	</update>
+	
+	<update id="updateWithdraw" parameterType="Setup">
+		UPDATE setup SET 
+			machineno = #{ machineNo }, 
+			leaseno = #{ leaseNo },			 
+			withdrawdate = sysdate,
+			setupstatus = #{ setupStatus }, 
+			withdrawreason = #{ withdrawReason }				
+		WHERE 
+			setupno = #{ setupNo }
+	</update>
+	
+	<select id="getWithdrawList" parameterType="hashMap" resultType="Setup">
+		SELECT  
+			setupno, machineno, leaseno, leasename, setupcost,  
+			setupdate, setupstatus, withdrawdate, withdrawreason   
+		FROM  
+		( 			
+			SELECT  		
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT  
+					su.setupno, su.machineno, su.leaseno, l.leasename, su.setupcost,  
+		    		su.setupdate, su.setupstatus, su.withdrawdate, su.withdrawreason  		   	   
+				FROM  
+					setup su, lease l  			   
+				WHERE  
+					su.leaseno = l.leaseno  			   
+				AND  
+					su.setupstatus LIKE '회수'  			   
+				ORDER BY  
+					su.withdrawdate DESC 			   
+			) s 
+		)  
+		WHERE  
+			idx >= ${ first } AND idx &lt; #{ last }	
+	</select>
+	
+	<select id="getWithdrawCount" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			setup 
+		WHERE 
+			setupstatus LIKE '회수'
+	</select>
+	
+	<select id="getWithdrawBySetupNo" parameterType="int" resultType="Setup">
+		SELECT 
+			s.setupno, s.machineno, s.leaseno, l.leasename, s.setupcost,
+			s.setupdate, s.withdrawdate, s.withdrawreason, s.setupstatus
+		FROM 
+			setup s, lease l
+		WHERE
+			s.leaseno = l.leaseno
+		AND 
+			s.setupno = #{ setupNo }
+	</select>
+	
+	<update id="updateReSetup" parameterType="Setup">
+		UPDATE setup SET
+			machineno = #{ machineNo }, 
+			leaseno = #{ leaseNo }, 
+			setupcost = #{ setupCost }, 
+			setupdate = sysdate, 
+			setupstatus = #{ setupStatus }, 
+			withdrawdate = sysdate, 
+			withdrawreason = ''				
+		WHERE 
+			setupno = #{ setupNo }
+	</update>
+	
+	<select id="isExistMachineCount" parameterType="Setup" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			setup 
+		WHERE 
+			machineno = #{ machineNo }
+	</select>
+	
+	<select id="getSetupSearchList" parameterType="hashMap" resultType="Setup">
+		SELECT  
+			setupno, machineno, leaseno, leasename, setupcost,  
+    		setupdate, setupstatus  	  
+		FROM  
+		( 			
+			SELECT  	
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT  
+					su.setupno, su.machineno, su.leaseno, l.leasename, su.setupcost,  
+		    		su.setupdate, su.setupstatus  		   	   
+				FROM  
+					setup su, lease l  			   
+				WHERE  
+					su.leaseno = l.leaseno  			   
+				AND  
+					su.setupstatus LIKE '가동%'
+				<choose>
+					<when test="searchType in {'setupno', 'machineno', 'setupstatus', 'leaseno'}">
+						AND
+							LOWER(su.${ searchType }) LIKE '%${ searchValue }%'
+					</when>
+					<when test="searchType == 'leasename'">
+						AND
+							LOWER(l.${ searchType }) LIKE '%${ searchValue }%'
+					</when>
+				</choose>   
+				ORDER BY  
+					su.setupdate DESC 
+			) s 
+		)  
+		WHERE  
+			idx >= #{ first } AND idx &lt; #{ last } 
+	</select>
+	
+	<select id="getSetupSearchListCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			setup s, lease l
+		WHERE 
+			s.leaseno = l.leaseno
+		AND 
+			s.setupstatus LIKE '가동%'
+		<choose>
+			<when test="searchType in {'setupno', 'machineno', 'setupstatus', 'leaseno'}">
+				AND 
+					LOWER(s.${ searchType }) LIKE '%${ searchValue }%'				
+			</when>
+			<when test="searchType == 'leasename'">
+				AND 
+					LOWER(l.${ searchType }) LIKE '%${ searchValue }%'
+			</when>
+		</choose>   
+	</select>
+	
+	<select id="getSetupSearchListByCost" parameterType="hashMap" resultType="Setup">
+		SELECT  
+			setupno, machineno, leaseno, leasename, setupcost,  
+		    setupdate, setupstatus  
+		FROM  
+		( 			
+			SELECT
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT  
+					su.setupno, su.machineno, su.leaseno, l.leasename, su.setupcost,  
+		    		su.setupdate, su.setupstatus  		   	   
+				FROM  
+					setup su, lease l  			   
+				WHERE  
+					su.leaseno = l.leaseno  			   
+				AND  
+					su.setupstatus LIKE '가동%'  			   
+				AND  
+					su.${ searchType } BETWEEN ${ searchCostFirstValue } AND ${ searchCostLastValue }  	   
+				ORDER BY  
+					su.setupdate DESC 
+			) s
+		)  
+		WHERE  
+			idx >= #{ first } AND idx &lt; #{ last }		
+	</select>
+	
+	<select id="getSetupSearchListByCostCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*)  
+		FROM 
+			setup s, lease l  
+		WHERE 
+			s.leaseno = l.leaseno  
+		AND 
+			s.setupstatus LIKE '가동%'  
+		AND 
+			s.${ searchType } BETWEEN ${ searchCostFirstValue } AND ${ searchCostLastValue }
+	</select>
+	
+	<select id="getSetupSearchListByDate"  parameterType="hashMap" resultType="Setup">
+		SELECT  
+			setupno, machineno, leaseno, leasename, setupcost,  
+		    setupdate, setupstatus  
+		FROM  
+		( 			
+			SELECT
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT  
+					su.setupno, su.machineno, su.leaseno, l.leasename, su.setupcost,  
+		    		su.setupdate, su.setupstatus  		   	   
+				FROM  
+					setup su, lease l  			   
+				WHERE  
+					su.leaseno = l.leaseno  			   
+				AND  
+					su.setupstatus LIKE '가동%'  			   
+				AND  
+					su.${ searchType } BETWEEN '${ searchDateFirstValue }' AND '${ searchDateLastValue }'  	   
+				ORDER BY  
+					su.setupdate DESC 
+			) s
+		)  
+		WHERE  
+			idx >= #{ first } AND idx &lt; #{ last }	
+	</select>
+	
+	<select id="getSetupSearchListByDateCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*)  
+		FROM 
+			setup s, lease l  
+		WHERE 
+			s.leaseno = l.leaseno  
+		AND 
+			s.setupstatus LIKE '가동%'  
+		AND 
+			s.${ searchType } BETWEEN '${ searchDateFirstValue }' AND '${ searchDateLastValue }'
+	</select>
+	
+	<select id="getWithdrawSearchList" parameterType="hashMap" resultType="Setup">
+		SELECT  
+			setupno, machineno, leaseno, leasename, setupcost,  
+			setupdate, setupstatus, withdrawdate, withdrawreason   
+		FROM  
+		( 			
+			SELECT  		
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT  
+					su.setupno, su.machineno, su.leaseno, l.leasename, su.setupcost,  
+		    		su.setupdate, su.setupstatus, su.withdrawdate, su.withdrawreason  		   	   
+				FROM  
+					setup su, lease l  			   
+				WHERE  
+					su.leaseno = l.leaseno  			   
+				AND  
+					su.setupstatus LIKE '회수'  		
+				<choose>
+					<when test="searchType in {'machineno', 'leaseno'}">
+						AND
+							LOWER(su.${ searchType }) LIKE '%${ searchValue }%'
+					</when>
+					<when test="searchType == 'leasename'">
+						AND
+							LOWER(l.${ searchType }) LIKE '%${ searchValue }%'
+					</when>
+				</choose> 	   
+				ORDER BY  
+					su.withdrawdate DESC 			   
+			) s 
+		)  
+		WHERE  
+			idx >= ${ first } AND idx &lt; #{ last }		
+	</select>
+	
+	<select id="getWithdrawSearchListCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM  
+			setup su, lease l  			   
+		WHERE  
+			su.leaseno = l.leaseno  			   
+		AND  
+			su.setupstatus LIKE '회수'  		
+		<choose>
+			<when test="searchType in {'machineno', 'leaseno'}">
+				AND
+					LOWER(su.${ searchType }) LIKE '%${ searchValue }%'
+			</when>
+			<when test="searchType == 'leasename'">
+				AND
+					LOWER(l.${ searchType }) LIKE '%${ searchValue }%'
+			</when>
+		</choose>
+	</select>
+	
+	<select id="getWithdrawSearchListByCost" parameterType="hashMap" resultType="Setup">
+		SELECT  
+			setupno, machineno, leaseno, leasename, setupcost,  
+			setupdate, setupstatus, withdrawdate, withdrawreason   
+		FROM  
+		( 			
+			SELECT  		
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT  
+					su.setupno, su.machineno, su.leaseno, l.leasename, su.setupcost,  
+		    		su.setupdate, su.setupstatus, su.withdrawdate, su.withdrawreason  		   	   
+				FROM  
+					setup su, lease l  			   
+				WHERE  
+					su.leaseno = l.leaseno  			   
+				AND  
+					su.setupstatus LIKE '회수'  		
+				AND  
+					su.${ searchType } BETWEEN #{ searchCostFirstValue } AND #{ searchCostLastValue }	   
+				ORDER BY  
+					su.withdrawdate DESC 			   
+			) s 
+		)  
+		WHERE  
+			idx >= ${ first } AND idx &lt; #{ last }
+	</select>
+	
+	<select id="getWithdrawSearchListByCostCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM  
+			setup su, lease l  			   
+		WHERE  
+			su.leaseno = l.leaseno  			   
+		AND  
+			su.setupstatus LIKE '회수'
+		AND 
+			su.${ searchType } BETWEEN #{ searchCostFirstValue } AND #{ searchCostLastValue }  	
+	</select>
+	
+	<select id="getWithdrawSearchListByDate"  parameterType="hashMap" resultType="Setup">
+		SELECT  
+			setupno, machineno, leaseno, leasename, setupcost,  
+			setupdate, setupstatus, withdrawdate, withdrawreason   
+		FROM  
+		( 			
+			SELECT  		
+				rownum idx, s.*  
+			FROM  
+			( 
+				SELECT  
+					su.setupno, su.machineno, su.leaseno, l.leasename, su.setupcost,  
+		    		su.setupdate, su.setupstatus, su.withdrawdate, su.withdrawreason  		   	   
+				FROM  
+					setup su, lease l  			   
+				WHERE  
+					su.leaseno = l.leaseno  			   
+				AND  
+					su.setupstatus LIKE '회수'  	
+				AND  
+					su.${ searchType } BETWEEN '${ searchDateFirstValue }' AND '${ searchDateLastValue }'  
+				ORDER BY  
+					su.withdrawdate DESC 			   
+			) s 
+		)  
+		WHERE  
+			idx >= ${ first } AND idx &lt; #{ last }
+	</select>
+	
+	<select id="getWithdrawSearchListByDateCount" parameterType="hashMap" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM  
+			setup su, lease l  			   
+		WHERE  
+			su.leaseno = l.leaseno  			   
+		AND  
+			su.setupstatus LIKE '회수'
+		AND 
+			su.${ searchType } BETWEEN '${ searchDateFirstValue }' AND '${ searchDateLastValue }'  	
+	</select>
+	
+</mapper>

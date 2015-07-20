@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<!-- namespace : 패키지명.클래스이름 을 논리적으로 선언 -->
+<mapper namespace="com.machinemanager.model.mapper.OrderMapper">
+		
+	<sql id="orderColumns">
+		orderno, supplyno, ordertotalprice, orderdate, orderer, 
+		supplyname
+	</sql>
+
+	<sql id="orderJoinPageColumns">
+		o.orderno, o.supplyno, o.ordertotalprice, o.orderdate, o.orderer, 
+		s.supplyname 
+	</sql>
+
+	<resultMap id="orderListResult" type="Order" >
+		<id column="o.orderno" property="no" />
+		<result column="o.supplyno " property="supplyNo" />
+		<result column=" o.ordertotalprice" property="totalPrice" />
+		<result column=" o.orderdate" property="date" />
+		<result column="o.orderer  " property="orderer" />	
+		<result column="s.supplyname  " property="supplyName" />	
+	</resultMap>	
+	
+	<select id="getOrderList" resultMap="orderListResult">
+		SELECT
+			<include refid="orderColumns" />
+		FROM
+			orders 
+	</select>
+	
+	<select id="getOrderListByPage" resultType="Order" parameterType="hashMap">
+		SELECT  
+	    	*
+	    FROM	   
+	    ( 			
+	    	SELECT
+	    		rownum idx, s.*  
+	    	FROM  	   
+	    	( 			   
+	    		SELECT
+					<include refid="orderJoinPageColumns" />
+				FROM
+					orders o, supply s
+				WHERE
+					o.supplyno = s.supplyno	(+)		   
+				ORDER BY
+					o.orderno DESC
+	    	) s	   
+	    )  	   
+	    WHERE  
+	    	idx >= #{ first } AND idx &lt; #{ last }
+	</select>
+		
+	<select id="getOrderCount" resultType="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			orders 
+		
+	</select>
+	
+	
+	<insert id="insertOrder" parameterType="Order"
+		useGeneratedKeys="true" keyColumn="orderno" keyProperty="orderNo">
+		INSERT INTO orders
+		 (
+		 	orderno, 
+		 	supplyno, 
+		 	ordertotalprice, 
+		 	orderer
+		 ) 
+		VALUES 
+		(
+			ORDERS_SEQ.nextval,
+			 #{supplyNo},
+			 #{orderTotalPrice}, 
+			 #{orderer}
+		)
+	</insert>
+	
+	<insert id="insertOrderDetail" parameterType="OrderDetail">
+		INSERT INTO orderdetail 
+		 (
+		 	orderno, 
+		 	productno, 
+		 	orderdetailcount, 
+		 	orderdetailprice
+		 ) 
+		VALUES 
+		(
+			#{orderNo}, 
+			#{productNo}, 
+			#{orderDetailCount}, 
+			#{orderDetailPrice}
+		)
+	</insert>
+	
+	<!-- 주문 상세 페이지에 관련된 테이블 가져오기 start -->
+	
+	<!-- 주문 -->
+	<resultMap id="orderResult" type="Order">
+		<id column="orderno" property="orderNo" />
+		<result column="ordertotalprice" property="orderTotalPrice" />
+		<result column="orderer" property="orderer" />
+		<result column="supplyno" property="supplyNo" />
+		<result column="orderdate" property="orderDate" />
+		<collection property="orderDetail" column="orderno" select="getOrderDetail" />
+		<collection property="supply" column="supplyno" select="getSupply" />
+	</resultMap>
+	<select id="getOrderByOrderNo" parameterType="int" resultMap="orderResult">
+		SELECT 
+			orderno, 
+			ordertotalprice, 
+			orderer, 
+			supplyno,
+			orderdate 
+		FROM orders 
+		WHERE orderno = #{orderNo}
+	</select>
+	
+	<!-- 주문상세 -->
+	<resultMap id="orderDetailResult" type="OrderDetail">
+		<id column="productno" property="productNo" />
+		<id column="orderno" property="orderNo" />
+		<result column="orderdetailcount" property="orderDetailCount" />
+		<result column="orderdetailprice" property="orderDetailPrice" />
+		<result column="orderstatus" property="orderStatus" />
+		<result column="productname" property="productName" />
+		<result column="productmeasure" property="productMeasure" />
+	</resultMap>
+	<select id="getOrderDetail" parameterType="int" resultMap="orderDetailResult">
+		SELECT 
+			o.productno, 
+			o.orderno,
+			o.orderdetailcount, 
+			o.orderdetailprice,
+			o.orderstatus,
+			p.productname,
+			p.productmeasure
+		FROM orderdetail o , product p 
+		
+		WHERE o.orderno = #{orderNo} AND o.productno = p.productno
+
+	</select>
+	
+	
+	<!-- 거래처 -->
+	<resultMap id="supplyResult" type="Supply">
+		<id column="supplyno" property="supplyNo" />
+		<result column="supplyname" property="supplyName" />
+		<result column="supplyaddress" property="supplyAddress" />
+		<result column="supplyemail" property="supplyEmail" />
+		<result column="supplyphone" property="supplyPhone" />
+		<result column="supplier" property="supplier" />
+		<result column="supplierphone" property="supplierPhone" />
+		<result column="supplynote" property="supplyNote" />
+	</resultMap>
+	
+
+	<select id="getSupply" parameterType="int" resultMap="supplyResult">
+	SELECT
+			supplyno, 
+			supplyname, 
+			supplyaddress, 
+			supplyemail, 
+			supplyphone, 
+			supplier, 
+			supplierphone, 
+			supplynote
+		FROM 
+			supply 
+		WHERE 
+			supplyno= #{ supplyNo }
+	</select>
+	
+	
+	
+	
+	<!-- 주문 상세 페이지에 관련된 테이블 가져오기 end -->
+	
+	
+	
+</mapper>

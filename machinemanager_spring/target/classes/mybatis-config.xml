@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+ 
+	<!-- Mapper 파일에서 사용하는 타입에 대한 단축 이름을 지정하는 설정 -->
+	<typeAliases>
+		<typeAlias type="com.machinemanager.model.dto.MachineStock" alias="MachineStock" />
+		<typeAlias type="com.machinemanager.model.dto.MachineStockIO" alias="MachineStockIO" />
+		<typeAlias type="com.machinemanager.model.dto.ProductStock" alias="ProductStock" />
+		<typeAlias type="com.machinemanager.model.dto.Product" alias="Product" />
+		<typeAlias type="com.machinemanager.model.dto.ProductDetail" alias="ProductDetail" />
+		<typeAlias type="com.machinemanager.model.dto.Order" alias="Order" />
+		<typeAlias type="com.machinemanager.model.dto.OrderDetail" alias="OrderDetail" />				
+		<typeAlias type="com.machinemanager.model.dto.Machine" alias="Machine" />		
+		<typeAlias type="com.machinemanager.model.dto.Setup" alias="Setup" />		
+		<typeAlias type="com.machinemanager.model.dto.Supply" alias="Supply" />
+		<typeAlias type="com.machinemanager.model.dto.Lease" alias="Lease" />
+		<typeAlias type="com.machinemanager.model.dto.Product" alias="Product" />
+	</typeAliases>
+
+	<mappers>
+		<mapper resource="com/machinemanager/model/mapper/MachineStockMapper.xml" />
+		<mapper resource="com/machinemanager/model/mapper/ProductStockMapper.xml" />
+		<mapper resource="com/machinemanager/model/mapper/MachineMapper.xml" />		
+		<mapper resource="com/machinemanager/model/mapper/SetupMapper.xml" />		
+		<mapper resource="com/machinemanager/model/mapper/SupplyMapper.xml" />
+		<mapper resource="com/machinemanager/model/mapper/LeaseMapper.xml" />
+		<mapper resource="com/machinemanager/model/mapper/ProductMapper.xml" />
+		<mapper resource="com/machinemanager/model/mapper/OrderMapper.xml" />
+	</mappers>
+
+</configuration>
